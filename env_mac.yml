@@ -1,0 +1,25 @@
+name: imitlearn
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - pip
+  - pip:
+    - stable-baselines3[extra]
+    - gymnasium
+    - gymnasium[classic-control]
+    - wandb
+    - matplotlib
+    - seaborn
+    - pandas
+    - numpy
+    - tqdm
+    - h5py
+    - imageio
+    - hydra-core
+    - ipykernel
+    - jupyter
