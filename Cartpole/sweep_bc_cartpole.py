@@ -2,9 +2,32 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 from pathlib import Path
 
-from ImitationLearning.bc import parse_hidden_sizes, train_policy
+
+def load_cartpole_video_module(repo_root: Path):
+    gen_path = repo_root / "Cartpole" / "generate_video_from_bc.py"
+    spec = importlib.util.spec_from_file_location("cartpole_gen_video", str(gen_path))
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load ImitationLearning/bc.py as a module (avoids package import issues)
+def load_bc_module(repo_root: Path):
+    bc_path = repo_root / "ImitationLearning" / "bc.py"
+    # Use the original module name so dataclasses and annotations resolve correctly
+    spec = importlib.util.spec_from_file_location("ImitationLearning.bc", str(bc_path))
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    # Ensure the module is registered in sys.modules under its spec name
+    import sys
+
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def parse_int_list(value: str) -> tuple[int, ...]:
@@ -13,7 +36,7 @@ def parse_int_list(value: str) -> tuple[int, ...]:
 
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run behavior cloning sweeps over dataset sizes and seeds."
+        description="Cartpole BC sweep and video recording"
     )
     parser.add_argument(
         "--env-id", required=True, help="Gymnasium environment id, e.g. CartPole-v1"
@@ -56,14 +79,30 @@ def make_parser() -> argparse.ArgumentParser:
         default=20,
         help="Episodes used for evaluation after training",
     )
+    parser.add_argument(
+        "--record-videos",
+        action="store_true",
+        help="Record BC videos after each experiment",
+    )
+    parser.add_argument(
+        "--n-episodes",
+        type=int,
+        default=3,
+        help="Number of episodes to record per experiment",
+    )
     return parser
 
 
 def main() -> None:
     args = make_parser().parse_args()
+    repo_root = Path(__file__).resolve().parents[1]
+    bc = load_bc_module(repo_root)
+    gen_video = load_cartpole_video_module(repo_root)
+    record_videos = gen_video.record_videos
+
     sizes = parse_int_list(args.sizes)
     seeds = parse_int_list(args.seeds)
-    hidden_sizes = parse_hidden_sizes(args.hidden_sizes)
+    hidden_sizes = bc.parse_hidden_sizes(args.hidden_sizes)
 
     args.output_root.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
@@ -71,7 +110,7 @@ def main() -> None:
     for size in sizes:
         for seed in seeds:
             output_dir = args.output_root / f"k{size}" / f"seed{seed}"
-            metrics = train_policy(
+            metrics = bc.train_policy(
                 env_id=args.env_id,
                 dataset_path=args.dataset,
                 output_dir=output_dir,
@@ -84,6 +123,16 @@ def main() -> None:
                 hidden_sizes=hidden_sizes,
                 eval_episodes=args.eval_episodes,
             )
+
+            # Optionally record videos for qualitative comparison
+            if args.record_videos:
+                checkpoint = output_dir / "bc_policy.pt"
+                video_folder = output_dir / "videos"
+                if checkpoint.exists():
+                    record_videos(
+                        checkpoint, video_folder, n_episodes=args.n_episodes, seed=seed
+                    )
+
             row = {"size": size, "seed": seed, **metrics, "output_dir": str(output_dir)}
             rows.append(row)
 

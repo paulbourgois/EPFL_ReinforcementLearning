@@ -63,5 +63,6 @@ Les résultats peuvent être obtenus en répétant le training pour plusieurs ta
 Les métriques sont écrites dans `metrics.json` dans chaque dossier d'expérience.
 
 ## Remarque
-
 Ce baseline ne couvre pas encore les algorithmes IR plus avancés cités dans l'énoncé. Il fournit cependant une base propre pour brancher les implémentations suivantes sur les mêmes datasets expert et la même évaluation.
+
+Pour les instructions spécifiques à `CartPole` (enregistrement de vidéos, wrapper local de sweep et notebook), consultez `Cartpole/README.md`.

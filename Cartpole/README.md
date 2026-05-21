@@ -66,6 +66,28 @@ Pour la suite de l'énoncé, il faut ensuite:
 - `Cartpole/plots/expert_trajectories_cartpole.png`
 - `Cartpole/videos/`
 
+## Imitation learning (Cartpole)
+
+Le dossier contient désormais un wrapper local pour lancer des sweeps BC spécifiques à Cartpole, enregistrer des vidéos et produire des `results.csv` exploitables.
+
+- `Cartpole/sweep_bc_cartpole.py` — lance les entraînements BC pour plusieurs tailles de dataset et seeds, écrit `results.csv` et peut enregistrer des vidéos par expérience.
+- `Cartpole/generate_video_from_bc.py` — script utilitaire et fonction `record_videos()` utilisée par le wrapper pour enregistrer N épisodes à partir d'un checkpoint BC.
+- Les sorties par expérience sont écrites sous `Cartpole/il/k{K}/seed{S}/` avec `bc_policy.pt`, `metrics.json` et (si demandé) un sous-dossier `videos/` contenant les MP4.
+
+Exemple (PowerShell):
+
+```powershell
+conda activate imitlearn
+# Sweep Cartpole and record 3 videos per experiment
+python .\Cartpole\sweep_bc_cartpole.py --env-id CartPole-v1 --dataset .\Cartpole\datasets\cartpole_expert_50.h5 --output-root .\Cartpole\il --sizes 1,5,10,25,50 --seeds 0,1,2 --record-videos --n-episodes 3
+```
+
+Remarque: enregistrer des vidéos pour toutes les expériences peut générer beaucoup de fichiers. Le notebook (voir ci‑dessous) n'intègrera qu'un sous-ensemble représentatif (p.ex. meilleur seed par taille) pour la visualisation.
+
+## Notebook
+
+Une ébauche de notebook `Cartpole/notebooks/Cartpole_pipeline.ipynb` sera ajoutée. Il contiendra les étapes principales du pipeline (génération d'expert, création de dataset, sweeps BC, plots de performance et intégration de vidéos représentatives). Le notebook utilisera les scripts existants et l'arborescence des résultats pour charger et afficher les vidéos et graphiques.
+
 Le pipeline d'imitation learning réutilisable est décrit dans [ImitationLearning/README.md](../ImitationLearning/README.md).
 
 ## Remarque

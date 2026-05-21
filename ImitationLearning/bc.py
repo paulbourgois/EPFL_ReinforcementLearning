@@ -73,8 +73,12 @@ class ContinuousBCPolicy(nn.Module):
         self.head = nn.Linear(self.backbone.output_dim, action_dim)
         action_low_tensor = torch.as_tensor(action_low, dtype=torch.float32)
         action_high_tensor = torch.as_tensor(action_high, dtype=torch.float32)
-        self.register_buffer("action_bias", (action_high_tensor + action_low_tensor) / 2.0)
-        self.register_buffer("action_scale", (action_high_tensor - action_low_tensor) / 2.0)
+        self.register_buffer(
+            "action_bias", (action_high_tensor + action_low_tensor) / 2.0
+        )
+        self.register_buffer(
+            "action_scale", (action_high_tensor - action_low_tensor) / 2.0
+        )
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         features = self.backbone(observations)
@@ -156,7 +160,9 @@ def load_expert_dataset(
     )
 
 
-def normalize_observations(observations: np.ndarray, obs_mean: np.ndarray, obs_std: np.ndarray) -> np.ndarray:
+def normalize_observations(
+    observations: np.ndarray, obs_mean: np.ndarray, obs_std: np.ndarray
+) -> np.ndarray:
     return (observations - obs_mean) / obs_std
 
 
@@ -250,7 +256,9 @@ def train_policy(
     env = gym.make(env_id)
     dataset = load_expert_dataset(dataset_path, max_trajectories, env)
 
-    observations = normalize_observations(dataset.observations, dataset.obs_mean, dataset.obs_std)
+    observations = normalize_observations(
+        dataset.observations, dataset.obs_mean, dataset.obs_std
+    )
     actions = dataset.actions
 
     indices = np.arange(len(observations))
@@ -261,15 +269,23 @@ def train_policy(
     train_indices = indices[:-validation_size]
     validation_indices = indices[-validation_size:]
 
-    train_observations = torch.as_tensor(observations[train_indices], dtype=torch.float32)
-    validation_observations = torch.as_tensor(observations[validation_indices], dtype=torch.float32)
+    train_observations = torch.as_tensor(
+        observations[train_indices], dtype=torch.float32
+    )
+    validation_observations = torch.as_tensor(
+        observations[validation_indices], dtype=torch.float32
+    )
 
     if dataset.action_mode == "discrete":
         train_actions = torch.as_tensor(actions[train_indices], dtype=torch.long)
-        validation_actions = torch.as_tensor(actions[validation_indices], dtype=torch.long)
+        validation_actions = torch.as_tensor(
+            actions[validation_indices], dtype=torch.long
+        )
     else:
         train_actions = torch.as_tensor(actions[train_indices], dtype=torch.float32)
-        validation_actions = torch.as_tensor(actions[validation_indices], dtype=torch.float32)
+        validation_actions = torch.as_tensor(
+            actions[validation_indices], dtype=torch.float32
+        )
 
     train_loader = DataLoader(
         TensorDataset(train_observations, train_actions),
@@ -319,7 +335,9 @@ def train_policy(
             validation_actions = validation_actions.to(device)
             validation_outputs = policy(validation_observations)
             if dataset.action_mode == "discrete":
-                validation_loss = F.cross_entropy(validation_outputs, validation_actions)
+                validation_loss = F.cross_entropy(
+                    validation_outputs, validation_actions
+                )
             else:
                 validation_loss = F.mse_loss(validation_outputs, validation_actions)
 
@@ -411,27 +429,65 @@ def load_checkpoint(checkpoint_path: Path) -> tuple[nn.Module, dict[str, object]
 
 
 def make_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Behavior cloning for expert trajectory datasets.")
+    parser = argparse.ArgumentParser(
+        description="Behavior cloning for expert trajectory datasets."
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    train_parser = subparsers.add_parser("train", help="Train a BC policy from expert trajectories.")
-    train_parser.add_argument("--env-id", required=True, help="Gymnasium environment id, e.g. CartPole-v1")
-    train_parser.add_argument("--dataset", required=True, type=Path, help="Path to the expert HDF5 dataset")
-    train_parser.add_argument("--output-dir", required=True, type=Path, help="Directory for the trained policy")
-    train_parser.add_argument("--max-trajectories", type=int, default=None, help="Limit the number of expert trajectories")
+    train_parser = subparsers.add_parser(
+        "train", help="Train a BC policy from expert trajectories."
+    )
+    train_parser.add_argument(
+        "--env-id", required=True, help="Gymnasium environment id, e.g. CartPole-v1"
+    )
+    train_parser.add_argument(
+        "--dataset", required=True, type=Path, help="Path to the expert HDF5 dataset"
+    )
+    train_parser.add_argument(
+        "--output-dir",
+        required=True,
+        type=Path,
+        help="Directory for the trained policy",
+    )
+    train_parser.add_argument(
+        "--max-trajectories",
+        type=int,
+        default=None,
+        help="Limit the number of expert trajectories",
+    )
     train_parser.add_argument("--seed", type=int, default=0, help="Random seed")
     train_parser.add_argument("--epochs", type=int, default=40, help="Training epochs")
     train_parser.add_argument("--batch-size", type=int, default=128, help="Batch size")
-    train_parser.add_argument("--learning-rate", type=float, default=3e-4, help="Learning rate")
-    train_parser.add_argument("--validation-split", type=float, default=0.2, help="Validation split fraction")
-    train_parser.add_argument("--hidden-sizes", type=str, default="256,256", help="Comma-separated MLP hidden sizes")
-    train_parser.add_argument("--eval-episodes", type=int, default=10, help="Episodes used for evaluation after training")
+    train_parser.add_argument(
+        "--learning-rate", type=float, default=3e-4, help="Learning rate"
+    )
+    train_parser.add_argument(
+        "--validation-split", type=float, default=0.2, help="Validation split fraction"
+    )
+    train_parser.add_argument(
+        "--hidden-sizes",
+        type=str,
+        default="256,256",
+        help="Comma-separated MLP hidden sizes",
+    )
+    train_parser.add_argument(
+        "--eval-episodes",
+        type=int,
+        default=10,
+        help="Episodes used for evaluation after training",
+    )
 
     eval_parser = subparsers.add_parser("eval", help="Evaluate a saved BC checkpoint.")
-    eval_parser.add_argument("--checkpoint", required=True, type=Path, help="Path to bc_policy.pt")
-    eval_parser.add_argument("--episodes", type=int, default=10, help="Number of evaluation episodes")
+    eval_parser.add_argument(
+        "--checkpoint", required=True, type=Path, help="Path to bc_policy.pt"
+    )
+    eval_parser.add_argument(
+        "--episodes", type=int, default=10, help="Number of evaluation episodes"
+    )
     eval_parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    eval_parser.add_argument("--render-mode", type=str, default=None, help="Optional Gymnasium render mode")
+    eval_parser.add_argument(
+        "--render-mode", type=str, default=None, help="Optional Gymnasium render mode"
+    )
 
     return parser
 

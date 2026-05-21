@@ -1,0 +1,2 @@
+best_validation_loss,dataset_size,final_train_loss,final_validation_loss,max_return,mean_return,min_return,output_dir,seed,size,std_return,train_size,validation_size
+0.6110751628875732,500.0,0.6713914722204208,0.6110751628875732,54.0,54.0,54.0,Cartpole\il\_smoke_test\k1\seed0,0,1,0.0,400.0,100.0

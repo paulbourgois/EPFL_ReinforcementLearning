@@ -1,0 +1,2 @@
+size,seed,best_validation_loss,final_train_loss,final_validation_loss,dataset_size,train_size,validation_size,mean_return,std_return,min_return,max_return,output_dir
+1,0,0.35608944296836853,0.40877679735422134,0.35608944296836853,500.0,400.0,100.0,395.2,167.84206862404906,67.0,500.0,Cartpole\il\k1\seed0
