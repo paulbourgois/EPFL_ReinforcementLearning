@@ -60,11 +60,13 @@ Pour la suite de l'énoncé, il faut ensuite:
 ## Fichiers produits
 
 - `Cartpole/experts/best_model`
-- `Cartpole/experts/dqn_cartpole_final`
+- `Cartpole/experts/ppo_cartpole_final`
 - `Cartpole/logs/`
 - `Cartpole/datasets/cartpole_expert_50.h5`
 - `Cartpole/plots/expert_trajectories_cartpole.png`
 - `Cartpole/videos/`
+
+Le pipeline d'imitation learning réutilisable est décrit dans [ImitationLearning/README.md](../ImitationLearning/README.md).
 
 ## Remarque
 
